@@ -3,7 +3,7 @@ Python scripts for working with `.ggl` files
 
 ## Background info
 Firmware updates for power line adapters with Broadcom chipsets are distributed as `.ggl` files.
-A `.ggl` file is an archive in Posix tar format that typically contains the following:
+A `.ggl` file is a TAR archive in POSIX ustar format, with a record size of 5120 bytes, that typically contains the following:
 
 * `hw_version.txt` file
 * `pcfg` CSV file that describes configurable parameters[^1]
