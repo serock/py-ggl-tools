@@ -1,0 +1,254 @@
+C:\Program Files (x86)\D-Link\DLink-PLC-util-lite>l2command.exe xx:xx:xx:xx:xx:xx apfw_get_param list
+sta_mac_address: c4:12:f5:xx:xx:xx
+Added device=> MAC: xx:xx:xx:xx:xx:xx, modemMAC: c4:12:f5:xx:xx:xx
+        0 - bridgefw_igmp_snooping
+        1 - uart1
+        2 - watchdog1_timer
+        3 - watchdog2_timer
+        4 - watchdog_ctrl
+        5 - watchdog_level
+        6 - watchdog_refresh
+        7 - plconfig_manufacturer_nid
+        8 - plconfig_manufacturer_nmk
+        9 - plconfig_manufacturer_dak_1
+        10 - plconfig_manufacturer_dak_2
+        11 - plconfig_manufacturer_dak_3
+        12 - plconfig_manufacturer_dak_4
+        13 - dsp_lb_tdmult_factor
+        14 - tonemapboss_lb_amap
+        15 - plconfig_prev_state
+        16 - mmpkts_sniffer_if
+        17 - tonemapfilter_max_time_without_blind
+        18 - tonemapfilter_fec_rate
+        19 - tonemapfilter_cp_code
+        20 - tonemapfilter_grouping_code
+        21 - llrweighting_lb_snr_th
+        22 - llrweighting_lb_weights
+        23 - bitloading_lb_snr_th
+        24 - tonemap_secs_expire_tm
+        25 - tonemap_quality_ratio_to_reset_tm
+        26 - tonemap_max_consecutive_sounds
+        27 - statinfo_manufacturer_sta_hfid
+        28 - statinfo_manufacturer_avln_hfid
+        29 - prod_test
+        30 - button_control
+        31 - led_timing_2
+        33 - nbi_detection_enable
+        34 - odm_private_string
+        35 - plconfig_user_nid
+        36 - plconfig_user_nmk
+        37 - statinfo_user_sta_hfid
+        38 - statinfo_user_avln_hfid
+        39 - dac_hp_gain
+        40 - lb_tx_preeq_en
+        41 - powermgr_standby_timeout
+        42 - igmpsnoop_mrt_delta
+        43 - hardware_code
+        44 - classifier_rules_src_dst_mac
+        45 - classifier_rules_vlan
+        46 - classifier_rules_ip_tos_prot
+        47 - classifier_rules_ip_dst_src_addr
+        48 - classifier_rules_udp_tcp_port
+        49 - igmpsnoop_dump_unknown
+        50 - igmpsnoop_robustness_variable
+        51 - classifier_rules_matching_order
+        52 - powermgr_standby_input
+        53 - idle_enabled
+        54 - button_options
+        55 - button_input_sel
+        56 - button_sc_trig_time_set
+        57 - plsched_backoff_time_until_idle
+        58 - button_gen_encryp_key_fr_trig_time_set
+        59 - button_stdby_trig_time_set
+        60 - plsched_pm_backoff_min
+        61 - flow_control_config
+        62 - led_control
+        63 - led_options
+        64 - led_timing
+        65 - led_output_sel
+        67 - led_qty_output_sel
+        80 - classifier_forced_const_priority_rule
+        81 - avlnmgr_uke_control
+        82 - dsp_lb_txgain_factor
+        83 - tonemapboss_phyrate_report_mode
+        84 - tonemapboss_hpav_version
+        85 - tonemapboss_tx_mode
+        86 - tonemapfilter_grouping_code_mimo
+        87 - pbo_tx_op_mode
+        88 - pbo_tx_min
+        89 - pbo_tx_max
+        90 - powermgr_standby_control
+        92 - avs_enable
+        93 - dsp_lb_tdmult_factor_mimo
+        94 - dsp_lb_txgain_factor_mimo
+        95 - tonemap_max_burst
+        96 - dsp_reference_rms_tdmult
+        97 - global_att
+        98 - board_options
+        99 - pbo_rx_span
+        100 - pbo_rx_min
+        101 - pbo_rx_max
+        103 - haleth_enet_core_0_config
+        104 - connectionmgr_connection_data_manufacturer
+        105 - connectionmgr_connection_data_user
+        106 - led_gpio_map
+        107 - button_gpio_map
+        108 - dsp_control_bits
+        109 - isolation_code
+        110 - power_save_awake_window
+        111 - power_save_period
+        112 - power_save_removed_duration
+        113 - max_eth_frame_len_eth0
+        114 - max_eth_frame_len_eth1
+        115 - internal_brcm
+        116 - power_save_policy
+        117 - power_save_policy_thr
+        118 - power_save_policy_timeout
+        119 - cenelec_regulation_options
+        120 - board_options2
+        121 - led_options2
+        122 - led_qty_threshold2
+        123 - dynamic_notches_num_disabled_carriers
+        124 - dynamic_notches_amap_num_steps
+        125 - dynamic_notches_amap_inter_step_time
+        126 - dynamic_notches_amap_attenuation
+        127 - dynamic_notches_filter_input_factor
+        128 - nni_sinr_thr
+        129 - nni_delimiter_proc_time
+        130 - nni_nn_eval_time
+        131 - pbo_rx_linearity_table_index
+        132 - bitloading_options
+        133 - dynamic_notches_power_threshold
+        134 - dynamic_notches_signal_to_noise_floor_threshold
+        135 - weak_syster_low_thr
+        136 - weak_syster_avg_thr
+
+C:\Program Files (x86)\D-Link\DLink-PLC-util-lite>l2command.exe xx:xx:xx:xx:xx:xx set_param_num list
+sta_mac_address: c4:12:f5:xx:xx:xx
+Added device=> MAC: xx:xx:xx:xx:xx:xx, modemMAC: c4:12:f5:xx:xx:xx
+        bridgefw_igmp_snooping (byte size: 1)
+        uart1 (byte size: 1)
+        watchdog1_timer (byte size: 1)
+        watchdog2_timer (byte size: 1)
+        watchdog_ctrl (byte size: 1)
+        watchdog_level (byte size: 1)
+        watchdog_refresh (byte size: 2)
+        plconfig_manufacturer_dak_1 (byte size: 4)
+        plconfig_manufacturer_dak_2 (byte size: 4)
+        plconfig_manufacturer_dak_3 (byte size: 4)
+        plconfig_manufacturer_dak_4 (byte size: 4)
+        dsp_lb_tdmult_factor (byte size: 4)
+        plconfig_prev_state (byte size: 1)
+        mmpkts_sniffer_if (byte size: 1)
+        tonemapfilter_max_time_without_blind (byte size: 4)
+        tonemapfilter_fec_rate (byte size: 1)
+        tonemapfilter_cp_code (byte size: 1)
+        tonemapfilter_grouping_code (byte size: 1)
+        tonemap_secs_expire_tm (byte size: 1)
+        tonemap_quality_ratio_to_reset_tm (byte size: 1)
+        tonemap_max_consecutive_sounds (byte size: 1)
+        prod_test (byte size: 1)
+        button_control (byte size: 2)
+        led_timing_2 (byte size: 4)
+        nbi_detection_enable (byte size: 1)
+        dac_hp_gain (byte size: 1)
+        lb_tx_preeq_en (byte size: 1)
+        powermgr_standby_timeout (byte size: 2)
+        igmpsnoop_mrt_delta (byte size: 1)
+        hardware_code (byte size: 2)
+        classifier_rules_src_dst_mac (byte size: 1)
+        classifier_rules_vlan (byte size: 1)
+        classifier_rules_ip_tos_prot (byte size: 1)
+        classifier_rules_ip_dst_src_addr (byte size: 1)
+        classifier_rules_udp_tcp_port (byte size: 1)
+        igmpsnoop_dump_unknown (byte size: 1)
+        igmpsnoop_robustness_variable (byte size: 1)
+        powermgr_standby_input (byte size: 1)
+        idle_enabled (byte size: 2)
+        button_options (byte size: 2)
+        button_input_sel (byte size: 2)
+        button_sc_trig_time_set (byte size: 2)
+        plsched_backoff_time_until_idle (byte size: 2)
+        button_gen_encryp_key_fr_trig_time_set (byte size: 2)
+        button_stdby_trig_time_set (byte size: 2)
+        plsched_pm_backoff_min (byte size: 2)
+        led_control (byte size: 4)
+        led_options (byte size: 4)
+        led_timing (byte size: 4)
+        led_output_sel (byte size: 4)
+        led_qty_output_sel (byte size: 4)
+        classifier_forced_const_priority_rule (byte size: 2)
+        avlnmgr_uke_control (byte size: 2)
+        dsp_lb_txgain_factor (byte size: 2)
+        tonemapboss_phyrate_report_mode (byte size: 1)
+        tonemapboss_hpav_version (byte size: 1)
+        tonemapboss_tx_mode (byte size: 1)
+        tonemapfilter_grouping_code_mimo (byte size: 1)
+        pbo_tx_op_mode (byte size: 1)
+        pbo_tx_min (byte size: 1)
+        pbo_tx_max (byte size: 1)
+        powermgr_standby_control (byte size: 2)
+        avs_enable (byte size: 1)
+        dsp_lb_tdmult_factor_mimo (byte size: 4)
+        dsp_lb_txgain_factor_mimo (byte size: 2)
+        tonemap_max_burst (byte size: 1)
+        dsp_reference_rms_tdmult (byte size: 1)
+        global_att (byte size: 1)
+        board_options (byte size: 1)
+        pbo_rx_span (byte size: 1)
+        pbo_rx_min (byte size: 1)
+        pbo_rx_max (byte size: 1)
+        haleth_enet_core_0_config (byte size: 4)
+        led_gpio_map (byte size: 4)
+        button_gpio_map (byte size: 4)
+        dsp_control_bits (byte size: 1)
+        isolation_code (byte size: 1)
+        power_save_awake_window (byte size: 1)
+        power_save_period (byte size: 1)
+        power_save_removed_duration (byte size: 1)
+        max_eth_frame_len_eth0 (byte size: 2)
+        max_eth_frame_len_eth1 (byte size: 2)
+        internal_brcm (byte size: 1)
+        power_save_policy (byte size: 1)
+        power_save_policy_thr (byte size: 2)
+        power_save_policy_timeout (byte size: 1)
+        cenelec_regulation_options (byte size: 1)
+        board_options2 (byte size: 2)
+        led_options2 (byte size: 4)
+        led_qty_threshold2 (byte size: 4)
+        dynamic_notches_num_disabled_carriers (byte size: 1)
+        dynamic_notches_amap_num_steps (byte size: 1)
+        dynamic_notches_amap_inter_step_time (byte size: 1)
+        dynamic_notches_amap_attenuation (byte size: 1)
+        dynamic_notches_filter_input_factor (byte size: 1)
+        nni_sinr_thr (byte size: 1)
+        nni_delimiter_proc_time (byte size: 2)
+        nni_nn_eval_time (byte size: 1)
+        pbo_rx_linearity_table_index (byte size: 1)
+        bitloading_options (byte size: 1)
+        dynamic_notches_power_threshold (byte size: 1)
+        weak_syster_low_thr (byte size: 2)
+        weak_syster_avg_thr (byte size: 2)
+
+C:\Program Files (x86)\D-Link\DLink-PLC-util-lite>l2command.exe xx:xx:xx:xx:xx:xx set_param_array list
+sta_mac_address: c4:12:f5:xx:xx:xx
+Added device=> MAC: xx:xx:xx:xx:xx:xx, modemMAC: c4:12:f5:xx:xx:xx
+        plconfig_manufacturer_nid (byte size: 1 nitems: 7)
+        plconfig_manufacturer_nmk (byte size: 1 nitems: 16)
+        tonemapboss_lb_amap (byte size: 1 nitems: 160)
+        llrweighting_lb_snr_th (byte size: 1 nitems: 8)
+        llrweighting_lb_weights (byte size: 1 nitems: 8)
+        bitloading_lb_snr_th (byte size: 1 nitems: 8)
+        statinfo_manufacturer_sta_hfid (byte size: 1 nitems: 64)
+        statinfo_manufacturer_avln_hfid (byte size: 1 nitems: 64)
+        odm_private_string (byte size: 1 nitems: 64)
+        plconfig_user_nid (byte size: 1 nitems: 7)
+        plconfig_user_nmk (byte size: 1 nitems: 16)
+        statinfo_user_sta_hfid (byte size: 1 nitems: 64)
+        statinfo_user_avln_hfid (byte size: 1 nitems: 64)
+        classifier_rules_matching_order (byte size: 1 nitems: 5)
+        flow_control_config (byte size: 1 nitems: 2)
+        connectionmgr_connection_data_manufacturer (byte size: 1 nitems: 1000)
+        connectionmgr_connection_data_user (byte size: 1 nitems: 1000)
+        dynamic_notches_signal_to_noise_floor_threshold (byte size: 1 nitems: 14)
+
