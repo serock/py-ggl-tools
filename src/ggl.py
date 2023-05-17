@@ -120,8 +120,8 @@ class ParamConfigHelper(BinaryMemberHelper):
         self.filetype = MemberHelper.FILETYPE_PARAMCONFIG
         self.pattern  = r"^paramconfig[A-Z0-9_.]+$"
 
-    def dump(self, pathname, pcfg_pathname):
-        with open(pathname, "rb") as f:
+    def dump(self, paramconfig_pathname, pcfg_pathname):
+        with open(paramconfig_pathname, "rb") as f:
             self.header_bytes = f.read(32)
             self.image_bytes  = f.read()
 
@@ -150,6 +150,10 @@ class ParamConfigHelper(BinaryMemberHelper):
                 else:
                     value = self.image_bytes[flash_offset:flash_offset + length].hex()
                 print(descriptor, ";", value, sep="")
+
+    def overlay(self, paramconfig_pathname, pcfg_pathname, overlay_pathname):
+        # FIXME implement
+        raise Exception("Not implmented yet")
 
     def _show_version(self):
         print("\nParamConfig Version:", BinaryMemberHelper._to_uint(self.header_bytes[16:20]))
@@ -180,34 +184,56 @@ def _check(args):
 
 def _dump(args):
     with tarfile.open(name=args.ggl_file, mode="r") as ggl_file:
-        members     = ggl_file.getmembers()
-        helper      = _get_helper("paramconfig")
-        member      = helper.find(members)
-        pcfg_helper = _get_helper("pcfg")
+        members            = ggl_file.getmembers()
+        paramconfig_helper = _get_helper(MemberHelper.FILETYPE_PARAMCONFIG)
+        paramconfig_member = paramconfig_helper.find(members)
+        pcfg_helper        = _get_helper(MemberHelper.FILETYPE_PCFG)
         
         try:
             pcfg_member = pcfg_helper.find(members)
         except:
-            pcfg_member = None
+            if args.pcfg == None:
+                raise Exception("No pcfg .csv file found")
+            else:
+                pcfg_member = None
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            pathname     = os.path.join(tmpdir, member.name)
-            extractables = [member]
+            paramconfig_pathname = os.path.join(tmpdir, paramconfig_member.name)
+            extractables         = [paramconfig_member]
             if pcfg_member == None:
-                if args.pcfg == None:
-                    raise Exception("No pcfg .csv file found")
-                else:
-                    pcfg_pathname = args.pcfg
+                pcfg_pathname = args.pcfg
             else:
                 pcfg_pathname = os.path.join(tmpdir, pcfg_member.name)
                 extractables.append(pcfg_member)
 
             ggl_file.extractall(path=tmpdir, members=extractables)
-            helper.dump(pathname, pcfg_pathname)
+            paramconfig_helper.dump(paramconfig_pathname, pcfg_pathname)
 
 def _overlay(args):
-    #FIXME implement
-    raise Exception("Not implemented yet")
+    with tarfile.open(name=args.ggl_file, mode="r") as ggl_file:
+        members            = ggl_file.getmembers()
+        paramconfig_helper = _get_helper(MemberHelper.FILETYPE_PARAMCONFIG)
+        paramconfig_member = paramconfig_helper.find(members)
+        fw_helper          = _get_helper(MemberHelper.FILETYPE_FW)
+        fw_member          = fw_helper.find(members)
+        bin_helper         = _get_helper(MemberHelper.FILETYPE_BIN)
+        bin_member         = bin_helper.find(members)
+        hw_version_helper  = _get_helper(MemberHelper.FILETYPE_HW_VERSION)
+        hw_version_member  = hw_version_helper.find(members)
+        pcfg_helper        = _get_helper(MemberHelper.FILETYPE_PCFG)
+        pcfg_member        = pcfg_helper.find(members)
+        extractables       = [paramconfig_member, fw_member, bin_member, hw_version_member, pcfg_member]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            ggl_file.extractall(path=tmpdir, members=extractables)
+            paramconfig_pathname = os.path.join(tmpdir, paramconfig_member.name)
+            pcfg_pathname        = os.path.join(tmpdir, pcfg_member.name)
+            paramconfig_helper.overlay(paramconfig_pathname, pcfg_pathname, args.overlay_file)
+            # TODO remove change to RECORDSIZE if https://github.com/python/cpython/issues/75955 is ever implemented
+            tarfile.RECORDSIZE = 10 * tarfile.BLOCKSIZE
+            with tarfile.open(name=args.out_ggl_file, mode="w", format=tarfile.USTAR_FORMAT) as out_ggl_file:
+                for member in extractables:
+                    out_ggl_file.add(os.path.join(tmpdir, member.name), arcname=member.name)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -221,8 +247,7 @@ def main():
     parser_d.add_argument("ggl_file", help="The .ggl file to read")
     parser_d.set_defaults(func=_dump);
     parser_o = subparsers.add_parser("overlay", help="Overlay some paramconfig values")
-    parser_o.add_argument("--pcfg", metavar="pcfg_file", help="Fallback pcfg .csv file")
-    parser_o.add_argument("csv_file", help="The paramconfig values to overlay")
+    parser_o.add_argument("overlay_file", help="A .csv file with paramconfig values to overlay")
     parser_o.add_argument("ggl_file", help="The .ggl file to read")
     parser_o.add_argument("out_ggl_file", help="The .ggl file to write")
     parser_o.set_defaults(func=_overlay);
