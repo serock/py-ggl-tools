@@ -56,8 +56,11 @@ class HwVersionHelper(MemberHelper):
         self.pattern = r"^hw_version\.txt$"
 
 class BinaryMemberHelper(MemberHelper):
-    def _crc(self, data):
-        return crc32(data, self.crc_init)
+    def _crc_header(self):
+        return crc32(self.header_bytes[0:28], self.crc_init)
+
+    def _crc_image(self):
+        return crc32(self.image_bytes, self.crc_init)
 
     def _check_field(embedded, calculated):
         return "(good)" if embedded == calculated else "(not good)"
@@ -74,13 +77,13 @@ class BinaryMemberHelper(MemberHelper):
         pass
 
     def _check_header_crc(self):
-        header_crc_calculated = self._crc(self.header_bytes[0:28])
+        header_crc_calculated = self._crc_header()
         print("\nCalculated Header CRC:", hex(header_crc_calculated))
         header_crc_embedded = BinaryMemberHelper._to_uint(self.header_bytes[28:32])
         print("Embedded Header CRC: ", hex(header_crc_embedded), BinaryMemberHelper._check_field(header_crc_embedded, header_crc_calculated))
 
     def _check_image_crc(self):
-        image_crc_calculated = self._crc(self.image_bytes)
+        image_crc_calculated = self._crc_image()
         print("\nCalculated Image CRC:", hex(image_crc_calculated))
         image_crc_embedded = BinaryMemberHelper._to_uint(self.header_bytes[12:16])
         print("Embedded Image CRC: ", hex(image_crc_embedded), BinaryMemberHelper._check_field(image_crc_embedded, image_crc_calculated))
@@ -91,11 +94,13 @@ class BinaryMemberHelper(MemberHelper):
         image_len_embedded = BinaryMemberHelper._to_uint(self.header_bytes[4:8])
         print("Embedded Image Length: ", image_len_embedded, BinaryMemberHelper._check_field(image_len_embedded, image_len_calculated))
 
-    def check(self, pathname):
-        with open(pathname, "rb") as f:
+    def _read_binary_file(self, pathname):
+        with open(pathname, mode="rb") as f:
             self.header_bytes = f.read(32)
             self.image_bytes  = f.read()
 
+    def check(self, pathname):
+        self._read_binary_file(pathname)
         self._show_file_info(pathname)
         self._check_header_crc()
         self._check_image_crc()
@@ -114,46 +119,86 @@ class FwHelper(BinaryMemberHelper):
         self.filetype = MemberHelper.FILETYPE_FW
         self.pattern  = r"^fw_upgrade[A-Z0-9_.]+$"
 
+class PcfgItem:
+    def __init__(self):
+        self.descriptor   = None
+        self.index        = None
+        self.length       = None
+        self.size         = None
+        self.flash_offset = None
+        self.value        = None
+
 class ParamConfigHelper(BinaryMemberHelper):
     def __init__(self):
         self.crc_init = 0
         self.filetype = MemberHelper.FILETYPE_PARAMCONFIG
         self.pattern  = r"^paramconfig[A-Z0-9_.]+$"
 
-    def dump(self, paramconfig_pathname, pcfg_pathname):
-        with open(paramconfig_pathname, "rb") as f:
-            self.header_bytes = f.read(32)
-            self.image_bytes  = f.read()
-
-        with open(pcfg_pathname, newline="") as pcfg_file:
-            reader = csv.reader(pcfg_file, delimiter=";")
+    def _read_pcfg(self, pcfg_pathname):
+        self.pcfg = []
+        with open(pcfg_pathname, mode="rt", newline="") as f:
+            reader = csv.reader(f, delimiter=";")
             reader.__next__()
-            print("Descriptor;Value")
-            for param_fields in reader:
-                descriptor = param_fields[0]
-                length = int(param_fields[3])
-                size = int(param_fields[4]) >> 3
-                flash_offset = int(param_fields[5], 16)
-                if length == 1:
-                    if size == 1:
-                        value = "%#04x" % BinaryMemberHelper._to_uint(self.image_bytes[flash_offset:flash_offset + size])
-                    elif size == 2:
-                        value = "%#06x" % BinaryMemberHelper._to_uint(self.image_bytes[flash_offset:flash_offset + size])
-                    elif size == 4:
-                        value = "%#010x" % BinaryMemberHelper._to_uint(self.image_bytes[flash_offset:flash_offset + size])
-                    else:
-                        raise "Bad field size"
-                elif length == 7 and descriptor.endswith("_nid"):
-                    value = "%#016x" % BinaryMemberHelper._to_uint(self.image_bytes[flash_offset:flash_offset + length])
-                elif descriptor.endswith("_string") or descriptor.endswith("_hfid"):
-                    value = '"' + self.image_bytes[flash_offset:flash_offset + length].decode(encoding="ascii").rstrip("\x00\x0a") + '"'
+            for row in reader:
+                item = PcfgItem()
+                item.descriptor   = row[0]
+                item.index        = int(row[2])
+                item.length       = int(row[3])
+                item.size         = int(row[4]) >> 3
+                item.flash_offset = int(row[5], 16)
+                self.pcfg.append(item)
+
+    def _read_overlay(self, overlay_pathname):
+        self.overlay = {}
+        with open(overlay_pathname, mode="rt", newline="") as f:
+            reader = csv.reader(f, delimiter=";")
+            reader.__next__()
+            for row in reader:
+                item = PcfgItem()
+                item.descriptor = row[0]
+                item.value      = row[1]
+                self.overlay[item.descriptor] = item
+
+    def dump(self, paramconfig_pathname, pcfg_pathname):
+        self._read_binary_file(paramconfig_pathname)
+        self._read_pcfg(pcfg_pathname)
+        print("Descriptor;Value")
+        for item in self.pcfg:
+            if item.length == 1:
+                if item.size == 1:
+                    value = "%#04x" % BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.size])
+                elif item.size == 2:
+                    value = "%#06x" % BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.size])
+                elif item.size == 4:
+                    value = "%#010x" % BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.size])
                 else:
-                    value = self.image_bytes[flash_offset:flash_offset + length].hex()
-                print(descriptor, ";", value, sep="")
+                    raise "Bad field size"
+            elif item.length == 7 and item.descriptor.endswith("_nid"):
+                value = "%#016x" % BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.length])
+            elif item.descriptor.endswith("_string") or item.descriptor.endswith("_hfid"):
+                value = '"' + self.image_bytes[item.flash_offset:item.flash_offset + item.length].decode(encoding="ascii").rstrip("\x00\x0a") + '"'
+            else:
+                value = self.image_bytes[item.flash_offset:item.flash_offset + item.length].hex()
+            print(item.descriptor, ";", value, sep="")
 
     def overlay(self, paramconfig_pathname, pcfg_pathname, overlay_pathname):
         # FIXME implement
-        raise Exception("Not implmented yet")
+        raise Exception("Not implemented yet")
+        self._read_binary_file(paramconfig_pathname)
+        self._read_pcfg(pcfg_pathname)
+        self._read_overlay(overlay_pathname)
+        self.image_bytes = bytearray(self.image_bytes)
+
+        # TODO overlay
+
+        self.header_bytes = bytearray(self.header_bytes)
+        with open(paramconfig_pathname, mode="wb") as f:
+            crc = self._crc_image()
+            self.header_bytes[12:16] = crc.to_bytes(length=4, byteorder="little")
+            crc = self._crc_header()
+            self.header_bytes[28:32] = crc.to_bytes(length=4, byteorder="little")
+            f.write(self.header_bytes)
+            f.write(self.image_bytes)
 
     def _show_version(self):
         print("\nParamConfig Version:", BinaryMemberHelper._to_uint(self.header_bytes[16:20]))

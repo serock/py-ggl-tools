@@ -21,14 +21,14 @@ Each of the three binary files consists of a binary image preceded by a 32-byte 
 
 | Header Bytes | Description |
 |:---:|---|
-| 1 &ndash; 4 | Unknown |
-| 5 &ndash; 8 | Number of bytes in image only (excludes the 32 header bytes) |
-| 9 &ndash; 12 | Unknown |
-| 13 &ndash; 16 | CRC-32 of image only |
-| 17 &ndash; 20 | `paramconfig` version (in `paramconfig` files only) |
-| 21 &ndash; 24 | Unknown |
-| 25 &ndash; 28 | Unknown |
-| 29 &ndash; 32 | CRC-32 of header bytes 1 &ndash; 28 |
+| 0 &ndash; 3 | Unknown |
+| 4 &ndash; 7 | Number of bytes in image only (excludes the 32 header bytes) |
+| 8 &ndash; 11 | Unknown |
+| 12 &ndash; 15 | CRC-32 of image only |
+| 16 &ndash; 19 | `paramconfig` version (in `paramconfig` files only) |
+| 20 &ndash; 23 | Unknown |
+| 24 &ndash; 27 | Unknown |
+| 28 &ndash; 31 | CRC-32 of header bytes 0 &ndash; 27 |
 
 Multi-byte integers are represented in little endian format.
 For `bin_upgrade` and `paramconfig` files, the CRC-32 algorithm uses an initial value of `0`.
