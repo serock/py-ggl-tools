@@ -40,45 +40,43 @@ class PcfgCsvGenerator:
         self.pcfg_pathname = pcfg_pathname
         self.params        = {}
 
-    def _load_params(self):
+    def _load_params(self, field_names):
         with open(self.txt_pathname, mode="rt", encoding="ascii") as f:
             for line in f:
                 line = line.strip()
                 m = match(r"^(\d{1,3}) - ([0-9a-z_]+)$", line)
                 if m:
-                    self.params[m.group(2)] = {"Descriptor": m.group(2), "Index": int(m.group(1))}
+                    self.params[m.group(2)] = {field_names[0]: m.group(2), field_names[2]: int(m.group(1))}
                 else:
                     m = match(r"^([0-9a-z_]+) \(byte size: ([124])\)$", line)
                     if m:
                         param = self.params[m.group(1)]
-                        param["Length"] = 1
-                        param["Bytes"] = int(m.group(2))
-                        param["Size"] = 8 * int(m.group(2))
+                        param[field_names[3]] = 1
+                        param[field_names[4]] = 8 * int(m.group(2))
                     else:
                         m = match(r"^([0-9a-z_]+) \(byte size: ([124]) nitems: (\d{1,4})\)$", line)
                         if m:
                             param = self.params[m.group(1)]
-                            param["Length"] = int(m.group(3))
-                            param["Bytes"] = int(m.group(2))
-                            param["Size"] = 8 * int(m.group(2))
+                            param[field_names[3]] = int(m.group(3))
+                            param[field_names[4]] = 8 * int(m.group(2))
 
     def _to_sorted_param_values(self):
         return sorted(self.params.values(), key=lambda param: param["Index"])
 
-    def _generate_csv(self, rows):
-        field_names = ["Descriptor", " ", "Index", "Length", "Size", "Flashoffset"]
+    def _generate_csv(self, rows, field_names):
         with open(self.pcfg_pathname, mode="wt", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=field_names, restval=" ", extrasaction="ignore", dialect="ggl")
             writer.writeheader()
             flash_offset = 0
             for row in rows:
-                row["Flashoffset"] = "0x{:X}".format(flash_offset)
+                row[field_names[5]] = "0x{:X}".format(flash_offset)
                 writer.writerow(row)
-                flash_offset += row["Length"] * row["Bytes"]
+                flash_offset += row[field_names[3]] * (row[field_names[4]] >> 3)
 
     def run(self):
-        self._load_params()
-        self._generate_csv(self._to_sorted_param_values())
+        field_names = ["Descriptor", " ", "Index", "Length", "Size", "Flashoffset"]
+        self._load_params(field_names)
+        self._generate_csv(self._to_sorted_param_values(), field_names)
 
 def main():
     csv.register_dialect("ggl", GglDialect)
