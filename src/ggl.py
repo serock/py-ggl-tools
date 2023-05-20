@@ -30,6 +30,15 @@ import tarfile
 import tempfile
 from binascii import crc32
 
+class GglDialect(csv.Dialect):
+    delimiter = ";"
+    quotechar = '"'
+    escapechar = None
+    doublequote = True
+    skipinitialspace = False
+    lineterminator = "\n"
+    quoting = csv.QUOTE_MINIMAL
+
 class MemberHelper:
     FILETYPE_BIN         = "bin"
     FILETYPE_FW          = "fw"
@@ -43,7 +52,7 @@ class MemberHelper:
             match = re.match(self.pattern, m.name, flags)
             if match:
                 return m
-        raise Exception(self.filetype + " file not found")
+        raise IOError(self.filetype + " file not found")
 
 class PcfgHelper(MemberHelper):
     def __init__(self):
@@ -137,7 +146,7 @@ class ParamConfigHelper(BinaryMemberHelper):
     def _read_pcfg(self, pcfg_pathname):
         self.pcfg = []
         with open(pcfg_pathname, mode="rt", newline="") as f:
-            reader = csv.reader(f, delimiter=";")
+            reader = csv.reader(f, dialect="ggl")
             reader.__next__()
             for row in reader:
                 item = PcfgItem()
@@ -151,7 +160,7 @@ class ParamConfigHelper(BinaryMemberHelper):
     def _read_overlay(self, overlay_pathname):
         self.overlay = {}
         with open(overlay_pathname, mode="rt", newline="") as f:
-            reader = csv.reader(f, delimiter=";")
+            reader = csv.reader(f, dialect="ggl")
             reader.__next__()
             for row in reader:
                 item = PcfgItem()
@@ -166,30 +175,52 @@ class ParamConfigHelper(BinaryMemberHelper):
         for item in self.pcfg:
             if item.length == 1:
                 if item.size == 1:
-                    value = "%#04x" % BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.size])
+                    value = "{:#04x}".format(BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.size]))
                 elif item.size == 2:
-                    value = "%#06x" % BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.size])
+                    value = "{:#06x}".format(BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.size]))
                 elif item.size == 4:
-                    value = "%#010x" % BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.size])
+                    value = "{:#010x}".format(BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.size]))
                 else:
-                    raise "Bad field size"
+                    raise ValueError("Bad " + item.descriptor + " size: " + item.size)
             elif item.length == 7 and item.descriptor.endswith("_nid"):
-                value = "%#016x" % BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.length])
-            elif item.descriptor.endswith("_string") or item.descriptor.endswith("_hfid"):
-                value = '"' + self.image_bytes[item.flash_offset:item.flash_offset + item.length].decode(encoding="ascii").rstrip("\x00\x0a") + '"'
+                value = "{:#016x}".format(BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.length]))
+            elif item.descriptor.endswith("_hfid"):
+                value = self.image_bytes[item.flash_offset:item.flash_offset + item.length].decode(encoding="ascii").rstrip("\x00\x0a")
             else:
                 value = self.image_bytes[item.flash_offset:item.flash_offset + item.length].hex()
             print(item.descriptor, ";", value, sep="")
 
     def overlay(self, paramconfig_pathname, pcfg_pathname, overlay_pathname):
-        # FIXME implement
-        raise Exception("Not implemented yet")
         self._read_binary_file(paramconfig_pathname)
         self._read_pcfg(pcfg_pathname)
         self._read_overlay(overlay_pathname)
         self.image_bytes = bytearray(self.image_bytes)
-
-        # TODO overlay
+        for item in self.pcfg:
+            if item.descriptor not in self.overlay:
+                continue
+            if item.descriptor.endswith("_nid") or item.descriptor.endswith("_nmk") or item.descriptor.startswith("plconfig_manufacturer_dak"):
+                raise RuntimeError(item.descriptor + " overlay not allowed")
+            value = self.overlay[item.descriptor].value
+            if item.length == 1:
+                if item.size == 1 or item.size == 2 or item.size == 4:
+                    value_bytes = int(value, 16).to_bytes(item.size, byteorder="little", signed=False)
+                    self.image_bytes[item.flash_offset:item.flash_offset + item.size] = value_bytes
+                else:
+                    raise ValueError("Bad " + item.descriptor + " size: " + item.size)
+            elif item.descriptor.endswith("_string") or item.descriptor.endswith("_hfid"):
+                value = self.overlay[item.descriptor].value
+                value_len = len(value)
+                if value_len > item.length:
+                    raise ValueError(item.descriptor + " overlay value too long: " + value_len + " > " + item.length)
+                value_bytes = bytearray(item.length)
+                value_bytes[0:value_len] = value.encode(encoding="ascii")
+                self.image_bytes[item.flash_offset:item.flash_offset + item.length] = value_bytes
+            else:
+                value_bytes = bytes.fromhex(value)
+                value_len = len(value_bytes)
+                if value_len > item.length:
+                    raise ValueError(item.descriptor + " overlay value too long: " + value_len + " > " + item.length)
+                self.image_bytes[item.flash_offset:item.flash_offset + item.length] = value_bytes
 
         self.header_bytes = bytearray(self.header_bytes)
         with open(paramconfig_pathname, mode="wb") as f:
@@ -232,13 +263,12 @@ def _dump(args):
         members            = ggl_file.getmembers()
         paramconfig_helper = _get_helper(MemberHelper.FILETYPE_PARAMCONFIG)
         paramconfig_member = paramconfig_helper.find(members)
-        pcfg_helper        = _get_helper(MemberHelper.FILETYPE_PCFG)
         
         try:
-            pcfg_member = pcfg_helper.find(members)
+            pcfg_member = _get_helper(MemberHelper.FILETYPE_PCFG).find(members)
         except:
             if args.pcfg == None:
-                raise Exception("No pcfg .csv file found")
+                raise IOError("No pcfg .csv file found")
             else:
                 pcfg_member = None
 
@@ -259,14 +289,10 @@ def _overlay(args):
         members            = ggl_file.getmembers()
         paramconfig_helper = _get_helper(MemberHelper.FILETYPE_PARAMCONFIG)
         paramconfig_member = paramconfig_helper.find(members)
-        fw_helper          = _get_helper(MemberHelper.FILETYPE_FW)
-        fw_member          = fw_helper.find(members)
-        bin_helper         = _get_helper(MemberHelper.FILETYPE_BIN)
-        bin_member         = bin_helper.find(members)
-        hw_version_helper  = _get_helper(MemberHelper.FILETYPE_HW_VERSION)
-        hw_version_member  = hw_version_helper.find(members)
-        pcfg_helper        = _get_helper(MemberHelper.FILETYPE_PCFG)
-        pcfg_member        = pcfg_helper.find(members)
+        fw_member          = _get_helper(MemberHelper.FILETYPE_FW).find(members)
+        bin_member         = _get_helper(MemberHelper.FILETYPE_BIN).find(members)
+        hw_version_member  = _get_helper(MemberHelper.FILETYPE_HW_VERSION).find(members)
+        pcfg_member        = _get_helper(MemberHelper.FILETYPE_PCFG).find(members)
         extractables       = [paramconfig_member, fw_member, bin_member, hw_version_member, pcfg_member]
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -274,13 +300,14 @@ def _overlay(args):
             paramconfig_pathname = os.path.join(tmpdir, paramconfig_member.name)
             pcfg_pathname        = os.path.join(tmpdir, pcfg_member.name)
             paramconfig_helper.overlay(paramconfig_pathname, pcfg_pathname, args.overlay_file)
-            # TODO remove change to RECORDSIZE if https://github.com/python/cpython/issues/75955 is ever implemented
+            # TODO remove overwrite of tarfile.RECORDSIZE if https://github.com/python/cpython/issues/75955 is ever implemented
             tarfile.RECORDSIZE = 10 * tarfile.BLOCKSIZE
             with tarfile.open(name=args.out_ggl_file, mode="w", format=tarfile.USTAR_FORMAT) as out_ggl_file:
                 for member in extractables:
                     out_ggl_file.add(os.path.join(tmpdir, member.name), arcname=member.name)
 
 def main():
+    csv.register_dialect("ggl", GglDialect)
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title="subcommands")
     parser_c = subparsers.add_parser("check", help="Check the CRCs of a file")
