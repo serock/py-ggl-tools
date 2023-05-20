@@ -146,49 +146,57 @@ class ParamConfigHelper(BinaryMemberHelper):
     def _read_pcfg(self, pcfg_pathname):
         self.pcfg = []
         with open(pcfg_pathname, mode="rt", newline="") as f:
-            reader = csv.reader(f, dialect="ggl")
-            reader.__next__()
+            reader = csv.DictReader(f, dialect="ggl")
+            field_names = reader.fieldnames
             for row in reader:
                 item = PcfgItem()
-                item.descriptor   = row[0]
-                item.index        = int(row[2])
-                item.length       = int(row[3])
-                item.size         = int(row[4]) >> 3
-                item.flash_offset = int(row[5], 16)
+                item.descriptor   = row[field_names[0]]
+                item.index        = int(row[field_names[2]])
+                item.length       = int(row[field_names[3]])
+                item.numBytes     = int(row[field_names[4]]) >> 3
+                item.flash_offset = int(row[field_names[5]], 16)
                 self.pcfg.append(item)
 
     def _read_overlay(self, overlay_pathname):
         self.overlay = {}
         with open(overlay_pathname, mode="rt", newline="") as f:
-            reader = csv.reader(f, dialect="ggl")
-            reader.__next__()
+            reader = csv.DictReader(f, dialect="ggl")
+            field_names = reader.fieldnames
             for row in reader:
-                item = PcfgItem()
-                item.descriptor = row[0]
-                item.value      = row[1]
-                self.overlay[item.descriptor] = item
+                self.overlay[row[field_names[0]]] = row[field_names[1]]
 
-    def dump(self, paramconfig_pathname, pcfg_pathname):
-        self._read_binary_file(paramconfig_pathname)
-        self._read_pcfg(pcfg_pathname)
-        print("Descriptor;Value")
+    def _dump(self, field_names, writer):
+        writer.writeheader()
         for item in self.pcfg:
             if item.length == 1:
-                if item.size == 1:
-                    value = "{:#04x}".format(BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.size]))
-                elif item.size == 2:
-                    value = "{:#06x}".format(BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.size]))
-                elif item.size == 4:
-                    value = "{:#010x}".format(BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.size]))
+                if item.numBytes == 1:
+                    value = "{:#04x}".format(BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.numBytes]))
+                elif item.numBytes == 2:
+                    value = "{:#06x}".format(BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.numBytes]))
+                elif item.numBytes == 4:
+                    value = "{:#010x}".format(BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.numBytes]))
                 else:
-                    raise ValueError("Bad " + item.descriptor + " size: " + item.size)
+                    raise ValueError("Bad " + item.descriptor + " size: " + item.numBytes + " bytes")
             elif item.length == 7 and item.descriptor.endswith("_nid"):
                 value = "{:#016x}".format(BinaryMemberHelper._to_uint(self.image_bytes[item.flash_offset:item.flash_offset + item.length]))
             elif item.descriptor.endswith("_hfid"):
                 value = self.image_bytes[item.flash_offset:item.flash_offset + item.length].decode(encoding="ascii").rstrip("\x00\x0a")
             else:
                 value = self.image_bytes[item.flash_offset:item.flash_offset + item.length].hex()
-            print(item.descriptor, ";", value, sep="")
+            row = {field_names[0]: item.descriptor, field_names[1]: value}
+            writer.writerow(row)
+
+    def dump(self, paramconfig_pathname, pcfg_pathname, out_pathname):
+        self._read_binary_file(paramconfig_pathname)
+        self._read_pcfg(pcfg_pathname)
+        field_names = ["Descriptor", "Value"]
+        if out_pathname == None:
+            writer = csv.DictWriter(sys.stdout, fieldnames=field_names, restval=" ", extrasaction="ignore", dialect="ggl")
+            self._dump(field_names, writer)
+        else:
+            with open(out_pathname, mode="wt", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=field_names, restval=" ", extrasaction="ignore", dialect="ggl")
+                self._dump(field_names, writer)
 
     def overlay(self, paramconfig_pathname, pcfg_pathname, overlay_pathname):
         self._read_binary_file(paramconfig_pathname)
@@ -200,15 +208,14 @@ class ParamConfigHelper(BinaryMemberHelper):
                 continue
             if item.descriptor.endswith("_nid") or item.descriptor.endswith("_nmk") or item.descriptor.startswith("plconfig_manufacturer_dak"):
                 raise RuntimeError(item.descriptor + " overlay not allowed")
-            value = self.overlay[item.descriptor].value
+            value = self.overlay[item.descriptor]
             if item.length == 1:
-                if item.size == 1 or item.size == 2 or item.size == 4:
-                    value_bytes = int(value, 16).to_bytes(item.size, byteorder="little", signed=False)
-                    self.image_bytes[item.flash_offset:item.flash_offset + item.size] = value_bytes
+                if item.numBytes == 1 or item.numBytes == 2 or item.numBytes == 4:
+                    value_bytes = int(value, 16).to_bytes(item.numBytes, byteorder="little", signed=False)
+                    self.image_bytes[item.flash_offset:item.flash_offset + item.numBytes] = value_bytes
                 else:
-                    raise ValueError("Bad " + item.descriptor + " size: " + item.size)
+                    raise ValueError("Bad " + item.descriptor + " size: " + item.numBytes + " bytes")
             elif item.descriptor.endswith("_string") or item.descriptor.endswith("_hfid"):
-                value = self.overlay[item.descriptor].value
                 value_len = len(value)
                 if value_len > item.length:
                     raise ValueError(item.descriptor + " overlay value too long: " + value_len + " > " + item.length)
@@ -282,7 +289,7 @@ def _dump(args):
                 extractables.append(pcfg_member)
 
             ggl_file.extractall(path=tmpdir, members=extractables)
-            paramconfig_helper.dump(paramconfig_pathname, pcfg_pathname)
+            paramconfig_helper.dump(paramconfig_pathname, pcfg_pathname, args.out)
 
 def _overlay(args):
     with tarfile.open(name=args.ggl_file, mode="r") as ggl_file:
@@ -314,12 +321,13 @@ def main():
     parser_c.add_argument("file_type", choices=["bin", "fw", "paramconfig"], help="The type of file to check")
     parser_c.add_argument("ggl_file", help="The .ggl file to read")
     parser_c.set_defaults(func=_check);
-    parser_d = subparsers.add_parser("dump", help="Dump the paramconfig to stdout")
-    parser_d.add_argument("--pcfg", metavar="pcfg_file", help="Fallback pcfg .csv file")
+    parser_d = subparsers.add_parser("dump", help="Dump the paramconfig to a file or stdout")
+    parser_d.add_argument("--pcfg", metavar="pcfg_file", help="Fallback pcfg CSV file")
+    parser_d.add_argument("--out", metavar="out_file", help="paramconfig CSV to write")
     parser_d.add_argument("ggl_file", help="The .ggl file to read")
     parser_d.set_defaults(func=_dump);
     parser_o = subparsers.add_parser("overlay", help="Overlay some paramconfig values")
-    parser_o.add_argument("overlay_file", help="A .csv file with paramconfig values to overlay")
+    parser_o.add_argument("overlay_file", help="A CSV file with paramconfig values to overlay")
     parser_o.add_argument("ggl_file", help="The .ggl file to read")
     parser_o.add_argument("out_ggl_file", help="The .ggl file to write")
     parser_o.set_defaults(func=_overlay);
