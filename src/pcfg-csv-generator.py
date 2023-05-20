@@ -22,15 +22,26 @@
 # SOFTWARE.
 
 import argparse
+import csv
 from re import match
 
+class GglDialect(csv.Dialect):
+    delimiter = ";"
+    quotechar = '"'
+    escapechar = None
+    doublequote = True
+    skipinitialspace = False
+    lineterminator = "\n"
+    quoting = csv.QUOTE_MINIMAL
+
 class PcfgCsvGenerator:
-    def __init__(self, filename):
-        self.filename = filename
-        self.params   = dict()
+    def __init__(self, txt_pathname, pcfg_pathname):
+        self.txt_pathname  = txt_pathname
+        self.pcfg_pathname = pcfg_pathname
+        self.params        = {}
 
     def _load_params(self):
-        with open(self.filename, "r", encoding="ascii") as f:
+        with open(self.txt_pathname, mode="rt", encoding="ascii") as f:
             for line in f:
                 line = line.strip()
                 m = match(r"^(\d{1,3}) - ([0-9a-z_]+)$", line)
@@ -54,24 +65,28 @@ class PcfgCsvGenerator:
     def _to_sorted_param_values(self):
         return sorted(self.params.values(), key=lambda param: param["Index"])
 
-    def _generate_csv(self, param_values):
-        print("Descriptor; ;Index;Length;Size;Flashoffset")
-
-        flash_offset = 0
-
-        for param in param_values:
-            print(param["Descriptor"], "; ;", param["Index"], ";", param["Length"], ";", param["Size"], ";0x", "%X" % flash_offset, sep="")
-            flash_offset = flash_offset + param["Length"] * param["Bytes"]
+    def _generate_csv(self, rows):
+        field_names = ["Descriptor", " ", "Index", "Length", "Size", "Flashoffset"]
+        with open(self.pcfg_pathname, mode="wt", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=field_names, restval=" ", extrasaction="ignore", dialect="ggl")
+            writer.writeheader()
+            flash_offset = 0
+            for row in rows:
+                row["Flashoffset"] = "0x{:X}".format(flash_offset)
+                writer.writerow(row)
+                flash_offset += row["Length"] * row["Bytes"]
 
     def run(self):
         self._load_params()
         self._generate_csv(self._to_sorted_param_values())
 
 def main():
+    csv.register_dialect("ggl", GglDialect)
     parser = argparse.ArgumentParser()
     parser.add_argument("txt_file", help="Output from l2command.exe that lists parameters")
+    parser.add_argument("pcfg_file", help="The pcfg CSV file to create")
     args = parser.parse_args()
-    generator = PcfgCsvGenerator(args.txt_file)
+    generator = PcfgCsvGenerator(args.txt_file, args.pcfg_file)
     generator.run()
     return 0
 
