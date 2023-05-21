@@ -18,9 +18,9 @@ Thus, there is no need to extract files from a `.ggl` archive before using the s
 
 The `ggl.py` script accepts the following subcommands as input:
 
-* `check` &ndash; Check CRCs within a binary file or check the `paramconfig` version
+* `check` &ndash; Check image length and CRCs in a binary file or show the `paramconfig` version
 * `dump` &ndash; Dump the values in the `paramconfig` file in CSV format
-* `overlay` &ndash; Overlay values in the `paramconfig` file with new values
+* `overlay` &ndash; Overlay values in the `paramconfig` file with new values from a CSV file
 
 #### Subcommand: check
 
@@ -33,6 +33,12 @@ The `ggl.py` script accepts the following subcommands as input:
 To dump the `paramconfig` file, use: `ggl.py dump <ggl-file>`
 
 However, if the `.ggl` archive does not have a `pcfg` CSV file, use `ggl.py --pcfg <pcfg-file> dump <ggl-file>`
+
+#### Subcommand: overlay
+
+To overlay parameter values in the `paramconfig` file, use: `ggl.py overlay <overlay_file> <ggl_file> <out_ggl_file>`
+
+The `overlay-file` is a CSV file that has the same format as a CSV file produced by the `dump` subcommand.
 
 #### Examples
 
@@ -69,9 +75,20 @@ ggl.py dump --pcfg pcfg.10417.csv --out paramconfig_values.10417.csv DHP-700AV_R
 
 </details>
 
+<details>
+  <summary>Overlay parameter values</summary>
+
+```
+ggl.py overlay overlay.10417.csv DHPP700AVA1_FW101NAb02.ggl DHP-700AVA1_FW101NAb02.ggl
+```
+
+</details>
+
 ### pcfg-csv-generator.py
 
 The `pcfg-csv-generator.py` script generates a `pcfg` CSV for the D-Link DHP-700AV 1.01.B01 firmware in the United States and writes the CSV to a file.
+The generated `pcfg` CSV file can be used with `dump` subcommand of the `ggl.py` script.
+
 The script accepts a text file as input. The text file must contain the following output from the D-Link *PLC Utility Lite* software:
 
 1. List of all parameters
