@@ -57,7 +57,7 @@ class MemberHelper:
 class PcfgHelper(MemberHelper):
     def __init__(self):
         self.filetype = MemberHelper.FILETYPE_PCFG
-        self.pattern = r"^pcfg\.\d{4,6}\.csv$"
+        self.pattern = r"^pcfg\.[a-d0-9_]{4,}\.csv$"
 
 class HwVersionHelper(MemberHelper):
     def __init__(self):
