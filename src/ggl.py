@@ -222,11 +222,19 @@ class ParamConfigHelper(BinaryMemberHelper):
                 value_bytes = bytearray(item.length)
                 value_bytes[0:value_len] = value.encode(encoding="ascii")
                 self.image_bytes[item.flash_offset:item.flash_offset + item.length] = value_bytes
+            elif item.descriptor.startswith("connectionmgr_connection_data_"):
+                value = bytes.fromhex(value)
+                value_len = len(value)
+                if value_len > item.length:
+                    raise ValueError(item.descriptor + " overlay value too long: " + value_len + " > " + item.length)
+                value_bytes = bytearray([0xff]) * item.length
+                value_bytes[0:value_len] = value
+                self.image_bytes[item.flash_offset:item.flash_offset + item.length] = value_bytes
             else:
                 value_bytes = bytes.fromhex(value)
                 value_len = len(value_bytes)
-                if value_len > item.length:
-                    raise ValueError(item.descriptor + " overlay value too long: " + value_len + " > " + item.length)
+                if value_len != item.length:
+                    raise ValueError(item.descriptor + " overlay value has wrong size: " + value_len + " != " + item.length)
                 self.image_bytes[item.flash_offset:item.flash_offset + item.length] = value_bytes
 
         self.header_bytes = bytearray(self.header_bytes)
