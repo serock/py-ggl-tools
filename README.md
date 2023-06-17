@@ -45,6 +45,11 @@ The `overlay-file` is a CSV file that has the same format as a CSV file produced
 Updating a power line adapter with a `.ggl` archive file that is not from the manufacturer could brick the device or break some its functionality.
 This is especially true if the firmware is for the wrong chip or the wrong geographic region, or if the `paramconfig` values are incompatible with the power line adapter.
 
+:bulb: **Tip**
+
+It may be necessary to perform a firmware update twice.
+In working with the D-Link DHP-700AV and the D-Link *PLC Utility for Windows*, it seems that the firmware gets updated during the initial update, but the `paramconfig` doesn't get updated until the second update.
+
 #### Examples
 
 <details>
@@ -87,7 +92,7 @@ ggl.py dump --pcfg pcfg.10417.csv --out paramconfig_values.10417.csv DHP-700AV_R
 ggl.py overlay overlay.dhp-700av.na.14050.csv BCM60500_v3.2.4_20180511_NA_14050.ggl DHP-700AVA1_FW101NAb04.ggl
 ```
 
-The `data/overlay.dhp-700av.na.14050.csv` file is an example of an overlay file for a North American D-Link DHP-700AV power line adapter and firmware version `svn 14050`.
+The [overlay.dhp-700av.na.14050.csv](data/overlay.dhp-700av.na.14050.csv) file is an example of an overlay file for a North American D-Link DHP-700AV power line adapter and firmware version `svn 14050`.
 
 </details>
 
@@ -102,9 +107,9 @@ The script accepts a text file as input. The text file must contain the followin
 2. List of integer parameters
 3. List of byte array parameters
 
-The `data/param_lists.10417.txt` file contains the 3 lists of parameters along with the commands used to generate them.
+The [param_lists.10417.txt](data/param_lists.10417.txt) file contains the 3 lists of parameters along with the commands used to generate them.
 
-The `data/pcfg.10417.csv` file contains the output of the `pcfg-csv-generator.py` script.
+The [pcfg.10417.csv](data/pcfg.10417.csv) file contains the output of the `pcfg-csv-generator.py` script.
 The CSV file was generated with the following command:
 
 ```
