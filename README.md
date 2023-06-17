@@ -40,7 +40,8 @@ To overlay parameter values in the `paramconfig` file, use: `ggl.py overlay <ove
 
 The `overlay-file` is a CSV file that has the same format as a CSV file produced by the `dump` subcommand.
 
-:warning: **Warning**
+:warning: **WARNING!**
+
 Updating a power line adapter with a `.ggl` archive file that is not from the manufacturer could brick the device or break some its functionality.
 This is especially true if the firmware is for the wrong chip or the wrong geographic region, or if the `paramconfig` values are incompatible with the power line adapter.
 
