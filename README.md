@@ -40,10 +40,14 @@ To overlay parameter values in the `paramconfig` file, use: `ggl.py overlay <ove
 
 The `overlay-file` is a CSV file that has the same format as a CSV file produced by the `dump` subcommand.
 
+:warning: **Warning**
+Updating a power line adapter with a `.ggl` archive file that is not from the manufacturer could brick the device or break some its functionality.
+This is especially true if the firmware is for the wrong chip or the wrong geographic region, or if the `paramconfig` values are incompatible with the power line adapter.
+
 #### Examples
 
 <details>
-  <summary>Check paramconfig</summary>
+  <summary>Checking paramconfig</summary>
 
 ```
 ggl.py check paramconfig DHP-700AV_REVA_FW101b01_duna_.ggl
@@ -67,7 +71,7 @@ ParamConfig Version: 10101
 </details>
 
 <details>
-  <summary>Dump paramconfig to a file</summary>
+  <summary>Dumping paramconfig to a file</summary>
 
 ```
 ggl.py dump --pcfg pcfg.10417.csv --out paramconfig_values.10417.csv DHP-700AV_REVA_FW101b01_duna_.ggl
@@ -76,17 +80,19 @@ ggl.py dump --pcfg pcfg.10417.csv --out paramconfig_values.10417.csv DHP-700AV_R
 </details>
 
 <details>
-  <summary>Overlay parameter values</summary>
+  <summary>Overlaying parameter values</summary>
 
 ```
-ggl.py overlay overlay.10417.csv DHPP700AVA1_FW101NAb02.ggl DHP-700AVA1_FW101NAb02.ggl
+ggl.py overlay overlay.dhp-700av.na.14050.csv BCM60500_v3.2.4_20180511_NA_14050.ggl DHP-700AVA1_FW101NAb04.ggl
 ```
+
+The `data/overlay.dhp-700av.na.14050.csv` file is an example of an overlay file for a North American D-Link DHP-700AV power line adapter and firmware version `svn 14050`.
 
 </details>
 
 ### pcfg-csv-generator.py
 
-The `pcfg-csv-generator.py` script generates a `pcfg` CSV for the D-Link DHP-700AV 1.01.B01 firmware in the United States and writes the CSV to a file.
+The `pcfg-csv-generator.py` script generates a `pcfg` CSV for the D-Link DHP-700AV 1.01.B01 North American firmware and writes the CSV to a file.
 The generated `pcfg` CSV file can be used with `dump` subcommand of the `ggl.py` script.
 
 The script accepts a text file as input. The text file must contain the following output from the D-Link *PLC Utility Lite* software:
