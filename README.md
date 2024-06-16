@@ -1,9 +1,9 @@
 # py-ggl-tools
-Python scripts for working with `.ggl` files
+Python scripts for working with .ggl firmware update files
 
 ## Background info
 Firmware updates for power line adapters with Broadcom chipsets are distributed as `.ggl` files.
-A `.ggl` file is an archive that contains other files.
+A `.ggl` file is an archive that contains both binary and text files.
 Some of these files contain information about firmware parameters.
 The Python scripts in this project deal primarily with the firmware parameter-related files (for example, dumping and overlaying firmware parameter values).
 
@@ -45,10 +45,10 @@ The `overlay-file` is a CSV file that has the same format as a CSV file produced
 Updating a power line adapter with a `.ggl` archive file that is not from the manufacturer could brick the device or break some its functionality.
 This is especially true if the firmware is for the wrong chip or the wrong geographic region, or if the `paramconfig` values are incompatible with the power line adapter.
 
-:bulb: **Tip**
+:information_source: **Note:**
 
-It may be necessary to perform a firmware update twice.
-In working with the D-Link DHP-700AV and the D-Link *PLC Utility for Windows*, it seems that the firmware gets updated during the initial update, but the `paramconfig` doesn't get updated until the second update.
+It might be necessary to perform a firmware update twice.
+In working with the D-Link DHP-700AV and the D-Link *PLC Utility for Windows*, it seemed that the firmware was updated during the initial update, but the `paramconfig` wasn't updated until a second update was performed.
 
 #### Examples
 
